@@ -1,7 +1,12 @@
 package ro.pub.cs.systems.pdsd.lab06.ftpserverwelcomemessage.views;
 
+
+import java.io.BufferedReader;
+import java.net.Socket;
+
 import ro.pub.cs.systems.pdsd.lab06.ftpserverwelcomemessage.R;
 import ro.pub.cs.systems.pdsd.lab06.ftpserverwelcomemessage.general.Constants;
+import ro.pub.cs.systems.pdsd.lab06.ftpserverwelcomemessage.general.Utilities;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,14 +30,36 @@ public class FTPServerWelcomeMessageActivity extends Activity {
 				
 				// TODO: exercise 4
 				// open socket with FTPServerAddress (taken from FTPServerAddressEditText edit text) and port (Constants.FTP_PORT = 21)
+				Socket socket = new Socket(FTPServerAddressEditText.getText().toString(), Constants.FTP_PORT);
+				
 				// get the BufferedReader attached to the socket (call to the Utilities.getReader() method)
+				BufferedReader buff = Utilities.getReader(socket);
 				// should the line start with Constants.FTP_MULTILINE_START_CODE, the welcome message is processed
-				// read lines from server while 
-				// - the value is different from Constants.FTP_MULTILINE_END_CODE1
-				// - the value does not start with Constants.FTP_MULTILINE_START_CODE2
+				String line = buff.readLine();
+				String text = "";
+				if(line.startsWith(Constants.FTP_MULTILINE_START_CODE)) {
+					line = buff.readLine();
+					// read lines from server while 
+					// - the value is different from Constants.FTP_MULTILINE_END_CODE1
+					// - the value does not start with Constants.FTP_MULTILINE_START_CODE2
+					while(line != null && !line.equals(Constants.FTP_MULTILINE_END_CODE1) && !line.startsWith(Constants.FTP_MULTILINE_END_CODE2)) {
+						text = text + " " + line;
+						line = buff.readLine();
+					}
+				}
+				final String str = text;
 				// append the line to the welcomeMessageTextView text view content (on the UI thread!!!)
-				// close the socket
+				welcomeMessageTextView.post(new Runnable(){
 
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						welcomeMessageTextView.setText(str);
+					}
+					
+				});
+				// close the socket
+				socket.close();
 			} catch (Exception exception) {
 				Log.e(Constants.TAG, "An exception has occurred: "+exception.getMessage());
 				if (Constants.DEBUG) {
